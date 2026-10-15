@@ -2,10 +2,13 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+# vite is a devDependency. A production NODE_ENV would omit it.
+RUN npm ci --include=dev
 
 COPY . .
 ENV NITRO_PRESET=node-server
+# npm scripts put this on PATH; a direct `node scripts/...` call does not.
+ENV PATH="/app/node_modules/.bin:${PATH}"
 RUN node scripts/with-app-env.mjs vite build && node scripts/patch-ssr-exports.mjs
 
 ENV HOST=0.0.0.0
