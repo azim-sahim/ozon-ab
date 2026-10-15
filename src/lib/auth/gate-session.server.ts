@@ -1,4 +1,5 @@
 import type { BetterAuthPlugin } from "better-auth";
+import { setCookie } from "@tanstack/react-start/server";
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import {
   parseSetCookieHeader,
@@ -65,7 +66,6 @@ async function emitSessionCookie(
 
   // Primary path: TanStack Start's response cookie store (reaches the browser).
   try {
-    const { setCookie } = await import("@tanstack/react-start/server");
     setCookie(sessionTokenName, sessionValue, {
       path: cookieOptions.path ?? "/",
       httpOnly: cookieOptions.httpOnly ?? true,
@@ -108,7 +108,6 @@ async function expireSessionDataCookie(
   const path = cookie.attributes.path ?? "/";
   const secure = cookie.attributes.secure ?? true;
   try {
-    const { setCookie } = await import("@tanstack/react-start/server");
     setCookie(cookie.name, "", {
       path,
       httpOnly: true,
