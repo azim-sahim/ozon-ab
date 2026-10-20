@@ -388,7 +388,6 @@ async function applyVariantToOzon(
   variant: { title: string; description: string; images: string[]; price: string | null; label?: string },
   testId: string,
   live: LiveCard,
-  forceText = false,
 ) {
   const shop = await credsFor(userId, shopId);
   const sql = await getSql();
@@ -417,27 +416,15 @@ async function applyVariantToOzon(
       errors.push(`цена: ${err instanceof Error ? err.message : "ошибка"}`);
     }
   }
-  // Локальный «эталон» (снимок/предыдущий вариант) может расходиться с тем, что реально на Ozon:
-  // карточку правили вручную или прошлая отправка не прошла. Поэтому при совпадении текстов
-  // сверяемся с живой карточкой, а forceText (ручная команда) отправляет название всегда.
-  let titleChanged = Boolean(normText(variant.title)) && normText(variant.title) !== normText(live.title);
-  let descriptionChanged = normText(variant.description) !== normText(live.description);
-  if (!titleChanged && !descriptionChanged && (forceText || normText(variant.title) || normText(variant.description))) {
-    try {
-      const fresh = await getProductDetails(creds, product.productId);
-      titleChanged = Boolean(normText(variant.title)) && normText(variant.title) !== normText(fresh.name);
-      descriptionChanged = Boolean(normText(variant.description)) && normText(variant.description) !== normText(fresh.description);
-    } catch {
-      titleChanged = forceText && Boolean(normText(variant.title));
-    }
-  }
+  const titleChanged = Boolean(normText(variant.title)) && normText(variant.title) !== normText(live.title);
+  const descriptionChanged = normText(variant.description) !== normText(live.description);
   if (titleChanged || descriptionChanged) {
     try {
       await applyNameDescription(creds, product, variant.title, variant.description, {
         title: titleChanged,
         description: descriptionChanged,
       });
-      notes.push(titleChanged && descriptionChanged ? "название и описание" : titleChanged ? "название" : "описание");
+      notes.push(titleChanged ? "название" : "описание");
     } catch (err) {
       errors.push(`название: ${err instanceof Error ? err.message : "ошибка"}`);
     }
@@ -490,17 +477,7 @@ export async function rotateTest(userId: string, testId: string, forcedVariantId
     try {
       const product = detail.snapshot ?? (await snapshotOf(testId));
       const current = variants.find((v) => v.id === cur);
-      // Ручная смена («Поставить на карточку») — forceText: название отправляется даже если
-      // локальный эталон совпадает с вариантом (эталон мог устареть относительно Ozon).
-      await applyVariantToOzon(
-        userId,
-        detail.test.shopId,
-        product,
-        next,
-        testId,
-        current ? liveFromVariant(current) : liveFromProduct(product),
-        Boolean(forcedVariantId),
-      );
+      await applyVariantToOzon(userId, detail.test.shopId, product, next, testId, current ? liveFromVariant(current) : liveFromProduct(product));
     } catch (err) {
       await writeLog(userId, {
         testId,
@@ -528,8 +505,6 @@ export const startTest = createServerFn({ method: "POST" })
     if (detail.test.mode !== "analysis_only") {
       const product = detail.snapshot ?? (await snapshotOf(id));
       const current = detail.variants.find((v) => v.id === detail.test.currentVariantId);
-      // Старт/возобновление — управляемая операция: тексты отправляем принудительно,
-      // чтобы карточка точно соответствовала варианту A, даже если локальный снимок устарел.
       await applyVariantToOzon(
         context.userId,
         detail.test.shopId,
@@ -537,7 +512,6 @@ export const startTest = createServerFn({ method: "POST" })
         first,
         id,
         current ? liveFromVariant(current) : liveFromProduct(product),
-        true,
       );
     }
     await writeLog(context.userId, { testId: id, action: "test_started", detail: `Старт ${first.label}` });
@@ -607,7 +581,6 @@ export const applyWinner = createServerFn({ method: "POST" })
     if (!winner) throw new Error("Вариант не найден");
     const product = detail.snapshot ?? (await snapshotOf(data.testId));
     const current = detail.variants.find((v) => v.id === detail.test.currentVariantId);
-    // Закрепление победителя — финальная управляемая операция: тексты отправляем принудительно.
     await applyVariantToOzon(
       context.userId,
       detail.test.shopId,
@@ -615,7 +588,6 @@ export const applyWinner = createServerFn({ method: "POST" })
       winner,
       data.testId,
       current ? liveFromVariant(current) : liveFromProduct(product),
-      true,
     );
     const sql = await getSql();
     await sql`update tests set winner_id = ${winner.id}, status = ${"completed"}, completed_at = now(), next_switch_at = null
