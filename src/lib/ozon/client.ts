@@ -310,11 +310,11 @@ export async function applyNameDescription(
   const attributes: ProductAttribute[] = [];
   if (which.title) {
     if (!ids.has(NAME_ATTR)) throw new OzonApiError("У карточки нет атрибута названия, полный импорт отключён", 400);
-    attributes.push({ id: NAME_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: title }] });
+    attributes.push({ id: NAME_ATTR, complex_id: 0, values: [{ value: title }] });
   }
   if (which.description) {
     if (!ids.has(DESC_ATTR)) throw new OzonApiError("У карточки нет атрибута описания, полный импорт отключён", 400);
-    attributes.push({ id: DESC_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: description }] });
+    attributes.push({ id: DESC_ATTR, complex_id: 0, values: [{ value: description }] });
   }
   if (!attributes.length) return;
   await ozonRequest(creds, "/v1/product/attributes/update", {
