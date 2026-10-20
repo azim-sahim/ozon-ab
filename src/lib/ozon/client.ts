@@ -281,24 +281,16 @@ const DESC_ATTR = 4191;
 
 type ProductAttribute = { id?: number; complex_id?: number; values?: { dictionary_value_id?: number; value?: string }[] };
 
-async function productAttributeIds(creds: ShopCreds, productId: string, offerId: string): Promise<Set<number>> {
-  const data = await ozonRequest<{ result?: { attributes?: ProductAttribute[] }[] }>(creds, "/v4/product/info/attributes", {
-    filter: {
-      product_id: [Number(productId)],
-      offer_id: offerId ? [offerId] : [],
-      visibility: "ALL",
-    },
-    limit: 1,
-    sort_dir: "ASC",
-  });
-  const ids = new Set<number>();
-  for (const attr of data.result?.[0]?.attributes ?? []) {
-    if (attr.id) ids.add(attr.id);
-  }
-  return ids;
-}
-
-/** Меняет только название и аннотацию. Полный /v3/product/import не вызывается: он затирает характеристики. */
+/**
+ * Меняет только название и/или аннотацию.
+ *
+ * Название и описание на Ozon — поля карточки, а не «характеристики» в привычном
+ * смысле: `/v1/product/attributes/update` с id 4180/4191 молча игнорирует текст,
+ * если в values нет `dictionary_value_id: 0`. Даже с этим полем апдейт атрибутов
+ * не всегда доезжает до отображаемого заголовка, поэтому основной путь —
+ * точечный `/v3/product/import` c offer_id + name/description (без массива
+ * attributes, чтобы не затирать характеристики).
+ */
 export async function applyNameDescription(
   creds: ShopCreds,
   snapshot: ProductCard,
@@ -306,20 +298,40 @@ export async function applyNameDescription(
   description: string,
   which: { title: boolean; description: boolean },
 ): Promise<void> {
-  const ids = await productAttributeIds(creds, snapshot.productId, snapshot.offerId);
+  if (!which.title && !which.description) return;
+  const productId = Number(snapshot.productId);
+  const offerId = (snapshot.offerId ?? "").trim();
+
+  // 1) Основной путь: точечный импорт. offer_id обязателен для апдейта,
+  //    name обязателен схемой импорта — всегда шлём текущее/целевое название.
+  if (offerId) {
+    const item: Record<string, unknown> = { offer_id: offerId, name: title };
+    if (which.description) item.description = description;
+    const res = await ozonRequest<{ result?: { task_id?: number | string } | null; task_id?: number | string }>(
+      creds,
+      "/v3/product/import",
+      { items: [item] },
+    );
+    const taskId = res?.result?.task_id ?? res?.task_id;
+    if (taskId === undefined || taskId === null) {
+      throw new OzonApiError("Ozon не принял смену названия/описания (нет task_id)", 400);
+    }
+    return;
+  }
+
+  // 2) Фолбэк, если у карточки нет offer_id: атрибуты 4180/4191 с
+  //    dictionary_value_id: 0 — без него Ozon отвечает 200 и ничего не меняет.
   const attributes: ProductAttribute[] = [];
   if (which.title) {
-    if (!ids.has(NAME_ATTR)) throw new OzonApiError("У карточки нет атрибута названия, полный импорт отключён", 400);
-    attributes.push({ id: NAME_ATTR, complex_id: 0, values: [{ value: title }] });
+    attributes.push({ id: NAME_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: title }] });
   }
   if (which.description) {
-    if (!ids.has(DESC_ATTR)) throw new OzonApiError("У карточки нет атрибута описания, полный импорт отключён", 400);
-    attributes.push({ id: DESC_ATTR, complex_id: 0, values: [{ value: description }] });
+    attributes.push({ id: DESC_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: description }] });
   }
   if (!attributes.length) return;
-  await ozonRequest(creds, "/v1/product/attributes/update", {
-    items: [{ offer_id: snapshot.offerId, attributes }],
-  });
+  const item: Record<string, unknown> = { attributes };
+  if (Number.isFinite(productId) && productId > 0) item.product_id = productId;
+  await ozonRequest(creds, "/v1/product/attributes/update", { items: [item] });
 }
 
 export type AnalyticsRow = { day: string; sku: string | null } & Funnel;

@@ -479,12 +479,15 @@ export async function rotateTest(userId: string, testId: string, forcedVariantId
       const current = variants.find((v) => v.id === cur);
       await applyVariantToOzon(userId, detail.test.shopId, product, next, testId, current ? liveFromVariant(current) : liveFromProduct(product));
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Ozon не принял карточку";
       await writeLog(userId, {
         testId,
         shopId: detail.test.shopId,
         action: "autoswitch_ozon_error",
-        detail: err instanceof Error ? err.message : "Ozon не принял карточку",
+        detail: message,
       });
+      // Ручная смена («Поставить на карточку») — пользователь должен увидеть ошибку.
+      if (forcedVariantId) throw new Error(message);
     }
   }
   await writeLog(userId, { testId, shopId: detail.test.shopId, action: "autoswitch", detail: `Автосмена → ${next.label}` });
