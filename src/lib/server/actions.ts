@@ -23,7 +23,7 @@ import {
   validateCredentials,
   type ShopCreds,
 } from "@/lib/ozon/client";
-import type { AdsSummary, ProductCard, RotationMode, TestDetail, TestMode, TestStatus } from "@/lib/types";
+import type { AdsSummary, ProductCard, RotationMode, TestDetail, TestMode } from "@/lib/types";
 import { addHours, asIso, mapLog, mapMetric, mapShop, mapTest, mapVariant } from "./map";
 import { allocateAds, emptyAds, fetchAdsStats, splitAds, validatePerfCredentials, type AdsDay, type PerfCreds } from "@/lib/ozon/performance";
 import { publicMediaUrl, publicOrigin, saveMedia } from "@/lib/server/media";
@@ -603,9 +603,9 @@ export const deleteTest = createServerFn({ method: "POST" })
   .validator((d: { id: string }) => d)
   .handler(async ({ context, data }) => {
     const sql = await getSql();
-    await sql`delete from metrics_daily where test_id = ${data.id}`;
-    await sql`delete from test_periods where test_id = ${data.id}`;
-    await sql`delete from variants where test_id = ${data.id}`;
+    await sql`delete from metrics_daily where test_id in (select id from tests where id = ${data.id} and user_id = ${context.userId})`;
+    await sql`delete from test_periods where test_id in (select id from tests where id = ${data.id} and user_id = ${context.userId})`;
+    await sql`delete from variants where test_id in (select id from tests where id = ${data.id} and user_id = ${context.userId})`;
     await sql`delete from tests where id = ${data.id} and user_id = ${context.userId}`;
   });
 
