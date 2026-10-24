@@ -15,8 +15,13 @@ function keyBytes(secret: string): Buffer {
 
 function secretsToTry(): string[] {
   const out: string[] = [];
-  for (const s of [process.env.BETTER_AUTH_SECRET, process.env.ENCRYPTION_KEY, "ozon-ab-preview-local-key"]) {
+  for (const s of [process.env.BETTER_AUTH_SECRET, process.env.ENCRYPTION_KEY]) {
     if (s && !out.includes(s)) out.push(s);
+  }
+  if (process.env.NODE_ENV !== "production") {
+    if (!out.includes("ozon-ab-preview-local-key")) {
+      out.push("ozon-ab-preview-local-key");
+    }
   }
   return out;
 }
@@ -62,9 +67,13 @@ function decryptV2(packed: string, secret: string): string {
 }
 
 export function encryptSecret(plain: string): string {
+  const secrets = secretsToTry();
+  if (secrets.length === 0) {
+    throw new Error("Missing ENCRYPTION_KEY or BETTER_AUTH_SECRET in production");
+  }
   const { createCipheriv, randomBytes } = nodeCrypto();
   const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", keyBytes(secretsToTry()[0]!), iv);
+  const cipher = createCipheriv("aes-256-gcm", keyBytes(secrets[0]!), iv);
   const enc = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
   const blob = Buffer.concat([iv, tag, enc]);
