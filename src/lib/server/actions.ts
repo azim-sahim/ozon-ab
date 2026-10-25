@@ -242,7 +242,7 @@ export const updateVariantImages = createServerFn({ method: "POST" })
     if (!variant) throw new Error("Вариант не найден");
     const sql = await getSql();
     await sql`update variants set images = ${JSON.stringify(images)}::jsonb
-      where id = ${data.variantId} and test_id = ${data.testId}`;
+      where id = ${data.variantId} and test_id in (select id from tests where id = ${data.testId} and user_id = ${context.userId})`;
     if (variant.isControl || data.variantId === detail.test.currentVariantId) {
       await sql`update tests set product_image = ${images[0]} where id = ${data.testId} and user_id = ${context.userId}`;
     }
@@ -469,7 +469,7 @@ export async function rotateTest(userId: string, testId: string, forcedVariantId
         returning id`;
   if (!claimed[0]) return { switched: 0 };
 
-  await sql`update test_periods set ended_at = now() where test_id = ${testId} and ended_at is null`;
+  await sql`update test_periods set ended_at = now() where test_id in (select id from tests where id = ${testId} and user_id = ${userId}) and ended_at is null`;
   await sql`insert into test_periods (id, test_id, user_id, variant_id, started_at)
     values (${nid()}, ${testId}, ${userId}, ${next.id}, now())`;
 
@@ -537,7 +537,7 @@ export const stopTest = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const detail = await loadTestDetail(context.userId, data.id);
     const sql = await getSql();
-    await sql`update test_periods set ended_at = now() where test_id = ${data.id} and ended_at is null`;
+    await sql`update test_periods set ended_at = now() where test_id in (select id from tests where id = ${data.id} and user_id = ${context.userId}) and ended_at is null`;
     await sql`update tests set status = ${"completed"}, completed_at = now(), next_switch_at = null where id = ${data.id} and user_id = ${context.userId}`;
     if (data.restore && detail.snapshot && detail.test.mode !== "analysis_only") {
       const current = detail.variants.find((v) => v.id === detail.test.currentVariantId);
@@ -651,7 +651,7 @@ async function collectMetricsForTest(userId: string, testId: string): Promise<st
   }
 
   if (shop.demo) {
-    await sql`delete from metrics_daily where test_id = ${testId}`;
+    await sql`delete from metrics_daily where test_id in (select id from tests where id = ${testId} and user_id = ${userId})`;
     let written = 0;
     for (const [i, day] of days.entries()) {
       const weights = coveragesForDay(periods, day);
@@ -729,7 +729,7 @@ async function collectMetricsForTest(userId: string, testId: string): Promise<st
   }
   const adsAllocated = allocateAds(adsRows, days, (day) => coveragesForDay(periods, day));
 
-  await sql`delete from metrics_daily where test_id = ${testId}`;
+  await sql`delete from metrics_daily where test_id in (select id from tests where id = ${testId} and user_id = ${userId})`;
   let written = 0;
   let todayOrders = 0;
   for (const day of days) {
