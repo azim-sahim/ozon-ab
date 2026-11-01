@@ -139,13 +139,26 @@ async function rememberCatalog(
 
 function catalogFromDemo(skus: string[]) {
   const set = new Set(skus);
-  return DEMO_PRODUCTS.filter((p) => (p.sku && set.has(p.sku)) || p.skus.some((s) => set.has(s))).flatMap((p) => {
+  return DEMO_PRODUCTS.filter(
+    (p) => (p.sku && set.has(p.sku)) || p.skus.some((s) => set.has(s)),
+  ).flatMap((p) => {
     const keys = p.skus.length ? p.skus : p.sku ? [p.sku] : [];
-    return keys.map((sku) => ({ sku, name: p.name, image: p.images[0] ?? null, offerId: p.offerId }));
+    return keys.map((sku) => ({
+      sku,
+      name: p.name,
+      image: p.images[0] ?? null,
+      offerId: p.offerId,
+    }));
   });
 }
 
-async function fillCatalog(userId: string, shopId: string, skus: string[], creds?: { clientId: string; apiKey: string }, demo = false) {
+async function fillCatalog(
+  userId: string,
+  shopId: string,
+  skus: string[],
+  creds?: { clientId: string; apiKey: string },
+  demo = false,
+) {
   const need = [...new Set(skus.filter(Boolean))];
   if (!need.length) return loadCosts(userId, shopId);
   const current = await loadCosts(userId, shopId);
@@ -161,7 +174,12 @@ async function fillCatalog(userId: string, shopId: string, skus: string[], creds
             const keys = new Set([p.sku, ...p.skus].filter(Boolean));
             return missing
               .filter((sku) => keys.has(sku))
-              .map((sku) => ({ sku, name: p.name, image: p.images[0] ?? null, offerId: p.offerId }));
+              .map((sku) => ({
+                sku,
+                name: p.name,
+                image: p.images[0] ?? null,
+                offerId: p.offerId,
+              }));
           })
         : [];
     if (found.length) await rememberCatalog(userId, shopId, found);
@@ -169,7 +187,13 @@ async function fillCatalog(userId: string, shopId: string, skus: string[], creds
   return loadCosts(userId, shopId);
 }
 
-function toRow(sku: string, name: string, flow: MoneyFlow, missingCost: boolean, image: string | null): ProfitSkuRow {
+function toRow(
+  sku: string,
+  name: string,
+  flow: MoneyFlow,
+  missingCost: boolean,
+  image: string | null,
+): ProfitSkuRow {
   return {
     sku,
     name: name || (sku ? sku : "Прочие начисления Ozon"),
@@ -222,7 +246,11 @@ function monthStart(ymd: string): string {
   return `${ymd.slice(0, 8)}01`;
 }
 
-function adsForPeriod(rows: { day: string; sku: string | null; spend: number }[], from: string, to: string): Map<string, number> {
+function adsForPeriod(
+  rows: { day: string; sku: string | null; spend: number }[],
+  from: string,
+  to: string,
+): Map<string, number> {
   const map = new Map<string, number>();
   for (const row of rows) {
     if (row.day && (row.day < from || row.day > to)) continue;
@@ -236,7 +264,14 @@ function buildReport(
   days: FinAgg[],
   adsBySku: Map<string, number>,
   costs: Map<string, SkuCost>,
-  shop: { id: string; name: string; demo: boolean; taxRegime: string; taxRate: number; extraMonthly: number },
+  shop: {
+    id: string;
+    name: string;
+    demo: boolean;
+    taxRegime: string;
+    taxRate: number;
+    extraMonthly: number;
+  },
   from: string,
   to: string,
   adsNote: string,
@@ -247,7 +282,13 @@ function buildReport(
   const periodDays = Math.max(1, Math.round((toMs - fromMs) / 86400000) + 1);
   const extraTotal = (shop.extraMonthly / 30) * periodDays;
 
-  const raws: { sku: string; name: string; image: string | null; flow: Omit<MoneyFlow, "tax" | "profit">; missingCost: boolean }[] = [];
+  const raws: {
+    sku: string;
+    name: string;
+    image: string | null;
+    flow: Omit<MoneyFlow, "tax" | "profit">;
+    missingCost: boolean;
+  }[] = [];
   let revenueSum = 0;
   for (const row of days) {
     const sku = row.sku ?? "";
@@ -271,7 +312,7 @@ function buildReport(
     raws.push({
       sku,
       name: titled,
-      image: sku ? cost?.image ?? null : null,
+      image: sku ? (cost?.image ?? null) : null,
       missingCost: units > 0 && (cost?.cost ?? 0) + (cost?.packing ?? 0) === 0 && !shop.demo,
       flow: {
         units,
@@ -321,7 +362,10 @@ function buildReport(
   }
 
   for (const r of raws) {
-    r.flow.extra = revenueSum > 0 ? extraTotal * (r.flow.revenue / revenueSum) : extraTotal / Math.max(1, raws.length);
+    r.flow.extra =
+      revenueSum > 0
+        ? extraTotal * (r.flow.revenue / revenueSum)
+        : extraTotal / Math.max(1, raws.length);
   }
 
   const tax = { regime: shop.taxRegime, rate: shop.taxRate };
@@ -373,7 +417,9 @@ export const listSkuCosts = createServerFn({ method: "POST" })
 
 export const saveSkuCost = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((d: { shopId: string; sku: string; name?: string; cost: number; packing: number }) => d)
+  .validator(
+    (d: { shopId: string; sku: string; name?: string; cost: number; packing: number }) => d,
+  )
   .handler(async ({ context, data }) => {
     const sku = data.sku.trim();
     if (!sku) throw new Error("Укажите SKU");
@@ -447,7 +493,8 @@ export const getProfitReport = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<ProfitReport> => {
     const shop = await shopMeta(context.userId, data.shopId);
     const sql = await getSql();
-    const days = await sql<FinAgg>`select sku, max(name) as name, sum(units) as units, sum(revenue) as revenue, sum(realization) as realization, sum(commission) as commission,
+    const days =
+      await sql<FinAgg>`select sku, max(name) as name, sum(units) as units, sum(revenue) as revenue, sum(realization) as realization, sum(commission) as commission,
         sum(logistics) as logistics, sum(returns) as returns, sum(storage) as storage, sum(penalties) as penalties,
         sum(ads_hold) as ads_hold, sum(other_hold) as other_hold, sum(payout) as payout
       from finance_daily
@@ -456,7 +503,9 @@ export const getProfitReport = createServerFn({ method: "POST" })
       group by sku`;
 
     const { credsFor } = await import("./actions");
-    const access = shop.demo ? { creds: undefined, perf: undefined } : await credsFor(context.userId, data.shopId);
+    const access = shop.demo
+      ? { creds: undefined, perf: undefined }
+      : await credsFor(context.userId, data.shopId);
     const costs = await fillCatalog(
       context.userId,
       data.shopId,
@@ -467,7 +516,11 @@ export const getProfitReport = createServerFn({ method: "POST" })
     const adsBySku = new Map<string, number>();
     let adsNote = "Реклама: удержания из отчёта начислений Ozon";
     if (!shop.demo && access.perf) {
-      const ads = await fetchAdsStats(access.perf, { dateFrom: data.from, dateTo: data.to, skus: [] });
+      const ads = await fetchAdsStats(access.perf, {
+        dateFrom: data.from,
+        dateTo: data.to,
+        skus: [],
+      });
       adsNote = ads.note;
       for (const row of ads.rows) {
         const key = row.sku ? String(row.sku) : "";
@@ -489,7 +542,10 @@ export const getProfitReport = createServerFn({ method: "POST" })
 
 export const getProfitDashboard = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((d: { shopId: string; today: string; period: "today" | "yesterday" | "month" | "lastMonth" }) => d)
+  .validator(
+    (d: { shopId: string; today: string; period: "today" | "yesterday" | "month" | "lastMonth" }) =>
+      d,
+  )
   .handler(async ({ context, data }) => {
     const today = data.today;
     const yesterday = shiftYmd(today, -1);
@@ -516,7 +572,9 @@ export const getProfitDashboard = createServerFn({ method: "POST" })
       group by sku, day`;
 
     const { credsFor } = await import("./actions");
-    const access = shop.demo ? { creds: undefined, perf: undefined } : await credsFor(context.userId, data.shopId);
+    const access = shop.demo
+      ? { creds: undefined, perf: undefined }
+      : await credsFor(context.userId, data.shopId);
     const costs = await fillCatalog(
       context.userId,
       data.shopId,
@@ -533,7 +591,11 @@ export const getProfitDashboard = createServerFn({ method: "POST" })
       adsRows = ads.rows;
     } else if (shop.demo) {
       adsNote = "Демо: реклама как доля выручки";
-      adsRows = daily.map((d) => ({ day: d.day.slice(0, 10), sku: d.sku, spend: money(d.revenue) * 0.08 }));
+      adsRows = daily.map((d) => ({
+        day: d.day.slice(0, 10),
+        sku: d.sku,
+        spend: money(d.revenue) * 0.08,
+      }));
     }
 
     const collapse = (from: string, to: string): FinAgg[] => {
@@ -574,7 +636,16 @@ export const getProfitDashboard = createServerFn({ method: "POST" })
     };
 
     const cards = periods.map((p) => {
-      const report = buildReport(collapse(p.from, p.to), adsForPeriod(adsRows, p.from, p.to), costs, shop, p.from, p.to, adsNote, null);
+      const report = buildReport(
+        collapse(p.from, p.to),
+        adsForPeriod(adsRows, p.from, p.to),
+        costs,
+        shop,
+        p.from,
+        p.to,
+        adsNote,
+        null,
+      );
       return { ...p, totals: report.totals };
     });
     const report = buildReport(

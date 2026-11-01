@@ -39,11 +39,11 @@ HOST=0.0.0.0 PORT=8080 npm start
 
 ## Переменные
 
-| Переменная | Зачем |
-|---|---|
-| `DATABASE_URL` | Postgres |
-| `BETTER_AUTH_SECRET` | Сессии + шифрование ключей Ozon |
-| `BETTER_AUTH_URL` / `APP_URL` | Публичный origin |
-| `CRON_SECRET` | Защита ручного тика |
-| `AUTH_TRUSTED_ORIGINS` | Доп. origin для входа |
-| `NITRO_PRESET=node-server` | Сборка под свой сервер, не Vercel |
+| Переменная                    | Зачем                             |
+| ----------------------------- | --------------------------------- |
+| `DATABASE_URL`                | Postgres                          |
+| `BETTER_AUTH_SECRET`          | Сессии + шифрование ключей Ozon   |
+| `BETTER_AUTH_URL` / `APP_URL` | Публичный origin                  |
+| `CRON_SECRET`                 | Защита ручного тика               |
+| `AUTH_TRUSTED_ORIGINS`        | Доп. origin для входа             |
+| `NITRO_PRESET=node-server`    | Сборка под свой сервер, не Vercel |

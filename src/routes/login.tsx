@@ -39,7 +39,8 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (isPending) return <p className="grid min-h-screen place-items-center text-sm text-muted">Загрузка…</p>;
+  if (isPending)
+    return <p className="grid min-h-screen place-items-center text-sm text-muted">Загрузка…</p>;
   if (user) {
     return <LoggedInRedirect />;
   }
@@ -110,14 +111,20 @@ function Login() {
   };
 
   const title =
-    mode === "up" ? "Создайте аккаунт — только почта и пароль."
-    : mode === "forgot" ? "Укажите почту — дадим ссылку на новый пароль."
-    : mode === "sent" ? "Откройте ссылку и задайте новый пароль. Действует 1 час."
-    : "Вход по почте и паролю.";
+    mode === "up"
+      ? "Создайте аккаунт — только почта и пароль."
+      : mode === "forgot"
+        ? "Укажите почту — дадим ссылку на новый пароль."
+        : mode === "sent"
+          ? "Откройте ссылку и задайте новый пароль. Действует 1 час."
+          : "Вход по почте и паролю.";
 
   return (
     <main className="grid min-h-screen place-items-center p-6">
-      <form onSubmit={(e) => void submit(e)} className="w-full max-w-sm space-y-4 rounded-[var(--radius-xl)] border border-border bg-surface p-8">
+      <form
+        onSubmit={(e) => void submit(e)}
+        className="w-full max-w-sm space-y-4 rounded-[var(--radius-xl)] border border-border bg-surface p-8"
+      >
         <p className="text-xs uppercase tracking-[0.2em] text-subtle">Seller tools</p>
         <h1 className="text-2xl font-medium tracking-tight">Ozon A/B</h1>
         <p className="text-sm text-muted">{title}</p>
@@ -133,7 +140,9 @@ function Login() {
                 Задать новый пароль
               </a>
             ) : null}
-            <p className="text-xs text-subtle">Ссылку не пересылайте. Если это не ваш аккаунт, просто закройте страницу.</p>
+            <p className="text-xs text-subtle">
+              Ссылку не пересылайте. Если это не ваш аккаунт, просто закройте страницу.
+            </p>
             <button
               type="button"
               className="w-full text-center text-sm text-muted hover:text-fg"
@@ -151,7 +160,12 @@ function Login() {
             {mode === "up" ? (
               <div>
                 <Label>Имя</Label>
-                <Input className="mt-1" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+                <Input
+                  className="mt-1"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                />
               </div>
             ) : null}
             <div>
@@ -181,7 +195,13 @@ function Login() {
             ) : null}
             {error ? <p className="text-sm text-danger">{error}</p> : null}
             <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? "Секунду…" : mode === "in" ? "Войти" : mode === "up" ? "Зарегистрироваться" : "Получить ссылку"}
+              {busy
+                ? "Секунду…"
+                : mode === "in"
+                  ? "Войти"
+                  : mode === "up"
+                    ? "Зарегистрироваться"
+                    : "Получить ссылку"}
             </Button>
             {mode === "in" ? (
               <button

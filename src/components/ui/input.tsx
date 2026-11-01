@@ -25,5 +25,10 @@ export function Textarea({ className, ...props }: React.ComponentProps<"textarea
 }
 
 export function Label({ className, ...props }: React.ComponentProps<"label">) {
-  return <label className={cn("text-xs font-medium uppercase tracking-wide text-subtle", className)} {...props} />;
+  return (
+    <label
+      className={cn("text-xs font-medium uppercase tracking-wide text-subtle", className)}
+      {...props}
+    />
+  );
 }

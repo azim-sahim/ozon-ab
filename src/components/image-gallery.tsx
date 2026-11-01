@@ -14,7 +14,9 @@ async function readAsDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-async function compressFile(file: File): Promise<{ mime: string; dataBase64: string; filename: string }> {
+async function compressFile(
+  file: File,
+): Promise<{ mime: string; dataBase64: string; filename: string }> {
   if (!file.type.startsWith("image/")) throw new Error("Это не картинка");
   const dataUrl = await readAsDataUrl(file);
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -40,7 +42,11 @@ async function compressFile(file: File): Promise<{ mime: string; dataBase64: str
   });
   if (blob.size > 4.5 * 1024 * 1024) throw new Error("После сжатия файл всё ещё слишком большой");
   const b64 = await readAsDataUrl(blob);
-  return { mime, dataBase64: b64, filename: file.name.replace(/\.[^.]+$/, keepPng ? ".png" : ".jpg") };
+  return {
+    mime,
+    dataBase64: b64,
+    filename: file.name.replace(/\.[^.]+$/, keepPng ? ".png" : ".jpg"),
+  };
 }
 
 export function ImageGallery({
@@ -64,7 +70,12 @@ export function ImageGallery({
       for (const file of [...files]) {
         const packed = await compressFile(file);
         const saved = await uploadMedia({
-          data: { filename: packed.filename, mime: packed.mime, dataBase64: packed.dataBase64, origin },
+          data: {
+            filename: packed.filename,
+            mime: packed.mime,
+            dataBase64: packed.dataBase64,
+            origin,
+          },
         });
         next.push(saved.url);
       }
@@ -80,8 +91,12 @@ export function ImageGallery({
 
   return (
     <div className="space-y-2">
-      {label ? <p className="text-xs font-medium uppercase tracking-wide text-subtle">{label}</p> : null}
-      <p className="text-xs text-muted">Первая — главное фото. Ozon заберёт файлы с этого сайта по HTTPS.</p>
+      {label ? (
+        <p className="text-xs font-medium uppercase tracking-wide text-subtle">{label}</p>
+      ) : null}
+      <p className="text-xs text-muted">
+        Первая — главное фото. Ozon заберёт файлы с этого сайта по HTTPS.
+      </p>
       <div className="flex flex-wrap gap-2">
         {urls.map((url, i) => (
           <div key={`${url}-${i}`} className="relative">
@@ -94,7 +109,9 @@ export function ImageGallery({
               )}
             />
             {i === 0 ? (
-              <span className="absolute bottom-1 left-1 rounded bg-bg/80 px-1 text-[10px] text-fg">главное</span>
+              <span className="absolute bottom-1 left-1 rounded bg-bg/80 px-1 text-[10px] text-fg">
+                главное
+              </span>
             ) : null}
             <button
               type="button"
@@ -133,7 +150,12 @@ export function ImageGallery({
             if (e.target.files?.length) void addFiles(e.target.files);
           }}
         />
-        <Button type="button" variant="secondary" disabled={busy} onClick={() => inputRef.current?.click()}>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={busy}
+          onClick={() => inputRef.current?.click()}
+        >
           {busy ? "Загрузка…" : "С компьютера"}
         </Button>
         <Input

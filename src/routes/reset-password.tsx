@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 
 export const Route = createFileRoute("/reset-password")({
-  validateSearch: (s: Record<string, unknown>) => ({ token: typeof s.token === "string" ? s.token : "" }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    token: typeof s.token === "string" ? s.token : "",
+  }),
   component: ResetPassword,
 });
 
@@ -41,7 +43,10 @@ function ResetPassword() {
 
   return (
     <main className="grid min-h-screen place-items-center p-6">
-      <form onSubmit={(e) => void submit(e)} className="w-full max-w-sm space-y-4 rounded-[var(--radius-xl)] border border-border bg-surface p-8">
+      <form
+        onSubmit={(e) => void submit(e)}
+        className="w-full max-w-sm space-y-4 rounded-[var(--radius-xl)] border border-border bg-surface p-8"
+      >
         <p className="text-xs uppercase tracking-[0.2em] text-subtle">Seller tools</p>
         <h1 className="text-2xl font-medium tracking-tight">Новый пароль</h1>
         {!token ? (

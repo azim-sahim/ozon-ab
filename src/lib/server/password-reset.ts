@@ -33,7 +33,9 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     const email = data.email.trim().toLowerCase();
     const origin = originOf(data.origin);
     const token = randomToken();
-    const resetUrl = origin ? `${origin}/reset-password?token=${token}` : `/reset-password?token=${token}`;
+    const resetUrl = origin
+      ? `${origin}/reset-password?token=${token}`
+      : `/reset-password?token=${token}`;
     if (!email || !email.includes("@")) {
       return { resetUrl };
     }

@@ -28,7 +28,9 @@ function Dashboard() {
           <h1 className="text-2xl font-medium tracking-tight">Тесты карточек</h1>
           <p className="mt-1 text-sm text-muted">
             Ротация на сервере
-            {sched.data?.lastRunAt ? ` · последний тик ${formatDate(sched.data.lastRunAt)}` : " · тик ещё не был"}
+            {sched.data?.lastRunAt
+              ? ` · последний тик ${formatDate(sched.data.lastRunAt)}`
+              : " · тик ещё не был"}
           </p>
         </div>
         <Link to="/tests/new">
@@ -54,17 +56,25 @@ function Dashboard() {
             <Link key={t.id} to="/tests/$id" params={{ id: t.id }} className="block">
               <Card className="flex flex-wrap items-center gap-4 p-4 hover:bg-elevated">
                 {t.productImage ? (
-                  <img src={t.productImage} alt="" className="h-14 w-14 rounded-[var(--radius-sm)] object-cover" />
+                  <img
+                    src={t.productImage}
+                    alt=""
+                    className="h-14 w-14 rounded-[var(--radius-sm)] object-cover"
+                  />
                 ) : (
                   <div className="h-14 w-14 rounded-[var(--radius-sm)] bg-elevated" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{t.name}</p>
-                  <p className="truncate text-sm text-muted">{t.productName} · {t.shopName}</p>
+                  <p className="truncate text-sm text-muted">
+                    {t.productName} · {t.shopName}
+                  </p>
                 </div>
                 <Badge>{t.status}</Badge>
                 {t.status === "running" ? (
-                  <span className="text-xs text-subtle">{t.currentVariantLabel} · {formatRemaining(t.nextSwitchAt)}</span>
+                  <span className="text-xs text-subtle">
+                    {t.currentVariantLabel} · {formatRemaining(t.nextSwitchAt)}
+                  </span>
                 ) : null}
               </Card>
             </Link>

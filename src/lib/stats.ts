@@ -32,7 +32,9 @@ export function computeStats(variants: Variant[], metrics: DailyMetric[]): Varia
     const orderedUnits = rows.reduce((s, r) => s + r.orderedUnits, 0);
     const revenue = rows.reduce((s, r) => s + r.revenue, 0);
     const views = hitsView || sessionView;
-    const incompleteUnits = rows.filter((m) => m.incomplete).reduce((s, r) => s + r.orderedUnits, 0);
+    const incompleteUnits = rows
+      .filter((m) => m.incomplete)
+      .reduce((s, r) => s + r.orderedUnits, 0);
     void closed;
     return {
       variant,
@@ -73,16 +75,22 @@ export function computeSignificance(stats: VariantStats[]): Significance {
   const p =
     viewsA && viewsB
       ? twoPropP(control.hitsTocart, viewsA, best.hitsTocart, viewsB)
-      : twoPropP(control.orderedUnits, Math.max(control.orderedUnits, 30), best.orderedUnits, Math.max(best.orderedUnits, 30));
+      : twoPropP(
+          control.orderedUnits,
+          Math.max(control.orderedUnits, 30),
+          best.orderedUnits,
+          Math.max(best.orderedUnits, 30),
+        );
   const ready = p !== null && p < 0.05 && best.variant.id !== control.variant.id;
   return {
     winnerLabel: ready ? best.variant.label : null,
     pValue: p,
     ready,
-    note: viewsA && viewsB
-      ? ready
-        ? `Вариант ${best.variant.label} значимо лучше (p=${p?.toFixed(3)}).`
-        : "Показов мало или разница ещё не значима. Сегодняшний день в z-тест не входит."
-      : "Сравниваем по штукам из отгрузок: один заказ на 3 шт. считается как 3. Показы в API только с Premium Plus. Сегодняшние штуки в значимость не входят.",
+    note:
+      viewsA && viewsB
+        ? ready
+          ? `Вариант ${best.variant.label} значимо лучше (p=${p?.toFixed(3)}).`
+          : "Показов мало или разница ещё не значима. Сегодняшний день в z-тест не входит."
+        : "Сравниваем по штукам из отгрузок: один заказ на 3 шт. считается как 3. Показы в API только с Premium Plus. Сегодняшние штуки в значимость не входят.",
   };
 }
