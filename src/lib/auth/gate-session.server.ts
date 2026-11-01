@@ -1,11 +1,7 @@
 import type { BetterAuthPlugin } from "better-auth";
 import { setCookie } from "@tanstack/react-start/server";
 import { createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
-import {
-  parseSetCookieHeader,
-  setRequestCookie,
-  setSessionCookie,
-} from "better-auth/cookies";
+import { parseSetCookieHeader, setRequestCookie, setSessionCookie } from "better-auth/cookies";
 import { handleOAuthUserInfo } from "better-auth/oauth2";
 import {
   GATE_IDENTITY_HEADER,
@@ -54,9 +50,7 @@ async function emitSessionCookie(
     return null;
   }
 
-  const sessionValue = parseSetCookieHeader(signedCookie).get(
-    sessionTokenName,
-  )?.value;
+  const sessionValue = parseSetCookieHeader(signedCookie).get(sessionTokenName)?.value;
   if (!sessionValue) {
     console.error(`${LOG} signed Set-Cookie missing session token value`, {
       cookiePreview: signedCookie.slice(0, 120),
@@ -125,10 +119,7 @@ async function expireSessionDataCookie(
         `${secure ? "Secure; " : ""}SameSite=Lax; Max-Age=0`,
     );
   } catch (err) {
-    console.error(
-      `${LOG} responseHeaders.append (expire session_data) failed`,
-      err,
-    );
+    console.error(`${LOG} responseHeaders.append (expire session_data) failed`, err);
   }
 }
 
@@ -167,9 +158,7 @@ export function gateIdentitySessions() {
 
             const identity = await gateIdentityFromHeaders(inbound);
             if (!identity) {
-              console.error(
-                `${LOG} ${GATE_IDENTITY_HEADER} present but verification failed`,
-              );
+              console.error(`${LOG} ${GATE_IDENTITY_HEADER} present but verification failed`);
               return;
             }
 
@@ -188,29 +177,19 @@ export function gateIdentitySessions() {
                     return null;
                   });
                 if (!accounts) {
-                  console.error(
-                    `${LOG} could not load accounts for existing session user`,
-                    { userId: existing.user.id },
-                  );
+                  console.error(`${LOG} could not load accounts for existing session user`, {
+                    userId: existing.user.id,
+                  });
                   return;
                 }
-                if (
-                  sessionBoundToGateIdentity(
-                    accounts,
-                    identity.sub,
-                    GATE_PROVIDER_ID,
-                  )
-                ) {
+                if (sessionBoundToGateIdentity(accounts, identity.sub, GATE_PROVIDER_ID)) {
                   // Already signed in as this gate identity — nothing to do.
                   return;
                 }
                 await ctx.context.internalAdapter
                   .deleteSession(existing.session.token)
                   .catch((err) => {
-                    console.error(
-                      `${LOG} deleteSession (stale non-gate session) failed`,
-                      err,
-                    );
+                    console.error(`${LOG} deleteSession (stale non-gate session) failed`, err);
                     return null;
                   });
               }
@@ -220,9 +199,7 @@ export function gateIdentitySessions() {
               const result = await handleOAuthUserInfo(ctx, {
                 userInfo: {
                   id: identity.sub,
-                  email: (
-                    identity.email ?? `${identity.sub}@viewer.grok.invalid`
-                  ).toLowerCase(),
+                  email: (identity.email ?? `${identity.sub}@viewer.grok.invalid`).toLowerCase(),
                   emailVerified: Boolean(identity.email),
                   name: identity.name ?? "Grok user",
                 },
@@ -253,10 +230,9 @@ export function gateIdentitySessions() {
                 result.data.session.token,
               );
               if (!sessionValue) {
-                console.error(
-                  `${LOG} session created in DB but cookie was not emitted`,
-                  { userId: result.data.user.id },
-                );
+                console.error(`${LOG} session created in DB but cookie was not emitted`, {
+                  userId: result.data.user.id,
+                });
                 return;
               }
 
@@ -265,9 +241,7 @@ export function gateIdentitySessions() {
 
               // Inject the cookie into this request so the rest of /get-session
               // resolves the newly created session in the same round-trip.
-              const headers = new Headers(
-                Object.fromEntries(inbound.entries()),
-              );
+              const headers = new Headers(Object.fromEntries(inbound.entries()));
               setRequestCookie(headers, sessionCookieName, sessionValue);
               removeRequestCookie(headers, sessionDataCookie.name);
               return { context: { headers } };

@@ -33,7 +33,13 @@ export const Route = createRootRoute({
   errorComponent: AppErrorComponent,
   head: () => {
     const host = publicShareHost();
-    const meta: Array<{ charSet?: string; name?: string; content?: string; title?: string; property?: string }> = [
+    const meta: Array<{
+      charSet?: string;
+      name?: string;
+      content?: string;
+      title?: string;
+      property?: string;
+    }> = [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: APP_NAME },

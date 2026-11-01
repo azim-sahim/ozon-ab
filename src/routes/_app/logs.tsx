@@ -13,11 +13,15 @@ function LogsPage() {
       <h1 className="text-2xl font-medium tracking-tight">Журнал</h1>
       {(logs.data ?? []).map((l) => (
         <Card key={l.id} className="p-4">
-          <p className="text-xs text-subtle">{formatDate(l.createdAt)} · {l.action}</p>
+          <p className="text-xs text-subtle">
+            {formatDate(l.createdAt)} · {l.action}
+          </p>
           <p className="mt-1 text-sm">{l.detail ?? "—"}</p>
         </Card>
       ))}
-      {(logs.data ?? []).length === 0 ? <p className="text-sm text-muted">Пока нет событий.</p> : null}
+      {(logs.data ?? []).length === 0 ? (
+        <p className="text-sm text-muted">Пока нет событий.</p>
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,8 @@
 type NodeCrypto = typeof import("node:crypto");
 
 function nodeCrypto(): NodeCrypto {
-  const proc = globalThis.process as { getBuiltinModule?: (name: string) => NodeCrypto } | undefined;
+  const proc = globalThis.process as
+    { getBuiltinModule?: (name: string) => NodeCrypto } | undefined;
   if (typeof proc?.getBuiltinModule !== "function") {
     throw new Error("Шифрование ключей доступно только на сервере");
   }
@@ -15,17 +16,27 @@ function keyBytes(secret: string): Buffer {
 
 function secretsToTry(): string[] {
   const out: string[] = [];
-  for (const s of [process.env.BETTER_AUTH_SECRET, process.env.ENCRYPTION_KEY, "ozon-ab-preview-local-key"]) {
+  for (const s of [
+    process.env.BETTER_AUTH_SECRET,
+    process.env.ENCRYPTION_KEY,
+    "ozon-ab-preview-local-key",
+  ]) {
     if (s && !out.includes(s)) out.push(s);
   }
   return out;
 }
 
 function asText(v: unknown): string {
-  if (typeof v === "string") return v.trim().replace(/^\uFEFF/, "").replace(/^"+|"+$/g, "");
+  if (typeof v === "string")
+    return v
+      .trim()
+      .replace(/^\uFEFF/, "")
+      .replace(/^"+|"+$/g, "");
   if (typeof Buffer !== "undefined" && Buffer.isBuffer(v)) return v.toString("utf8").trim();
   if (v && typeof v === "object" && Array.isArray((v as { data?: unknown }).data)) {
-    return Buffer.from((v as { data: number[] }).data).toString("utf8").trim();
+    return Buffer.from((v as { data: number[] }).data)
+      .toString("utf8")
+      .trim();
   }
   return String(v ?? "").trim();
 }
@@ -74,7 +85,10 @@ export function encryptSecret(plain: string): string {
 
 export function decryptSecret(packedUnknown: unknown): string {
   const packed = asText(packedUnknown);
-  if (!packed) throw new Error("Ключи магазина пустые. Заново сохраните Client-Id и Api-Key в разделе «Магазины».");
+  if (!packed)
+    throw new Error(
+      "Ключи магазина пустые. Заново сохраните Client-Id и Api-Key в разделе «Магазины».",
+    );
   if (looksPlainKey(packed)) return packed;
 
   let last: unknown = null;
@@ -88,10 +102,14 @@ export function decryptSecret(packedUnknown: unknown): string {
   }
 
   if (!packed.startsWith("v1:") && !packed.startsWith("v2.")) {
-    throw new Error("Ключи магазина записаны в старом формате. Откройте «Магазины», заново вставьте Client-Id и Api-Key и сохраните.");
+    throw new Error(
+      "Ключи магазина записаны в старом формате. Откройте «Магазины», заново вставьте Client-Id и Api-Key и сохраните.",
+    );
   }
   void last;
-  throw new Error("Ключи магазина не читаются после смены сервера. Откройте «Магазины», заново вставьте Client-Id и Api-Key и сохраните.");
+  throw new Error(
+    "Ключи магазина не читаются после смены сервера. Откройте «Магазины», заново вставьте Client-Id и Api-Key и сохраните.",
+  );
 }
 
 export function hintClientId(id: string): string {

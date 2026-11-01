@@ -99,13 +99,13 @@ export async function validatePerfCredentials(creds: PerfCreds): Promise<void> {
 type Campaign = { id?: string | number; campaignId?: string | number; state?: string };
 
 function campaignIds(data: unknown): string[] {
-  const bag =
-    Array.isArray(data) ? data
+  const bag = Array.isArray(data)
+    ? data
     : data && typeof data === "object"
-      ? ((data as { list?: Campaign[]; campaigns?: Campaign[]; result?: Campaign[] }).list
-        ?? (data as { campaigns?: Campaign[] }).campaigns
-        ?? (data as { result?: Campaign[] }).result
-        ?? [])
+      ? ((data as { list?: Campaign[]; campaigns?: Campaign[]; result?: Campaign[] }).list ??
+        (data as { campaigns?: Campaign[] }).campaigns ??
+        (data as { result?: Campaign[] }).result ??
+        [])
       : [];
   const ids = new Set<string>();
   for (const c of bag) {
@@ -116,13 +116,13 @@ function campaignIds(data: unknown): string[] {
 }
 
 function parseRows(raw: unknown, fallbackDay: string): AdsDay[] {
-  const list =
-    Array.isArray(raw) ? raw
+  const list = Array.isArray(raw)
+    ? raw
     : raw && typeof raw === "object"
-      ? ((raw as { rows?: unknown[]; result?: unknown[]; data?: unknown[] }).rows
-        ?? (raw as { result?: unknown[] }).result
-        ?? (raw as { data?: unknown[] }).data
-        ?? [])
+      ? ((raw as { rows?: unknown[]; result?: unknown[]; data?: unknown[] }).rows ??
+        (raw as { result?: unknown[] }).result ??
+        (raw as { data?: unknown[] }).data ??
+        [])
       : [];
   const out: AdsDay[] = [];
   for (const item of list) {
@@ -183,7 +183,11 @@ export async function fetchAdsStats(
     const { token: access, host } = await token(creds);
     const ids: string[] = [];
     for (let page = 1; page <= 15; page += 1) {
-      const campaignsRaw = await perfGet<unknown>(host, access, `/api/client/campaign?page=${page}&pageSize=100`);
+      const campaignsRaw = await perfGet<unknown>(
+        host,
+        access,
+        `/api/client/campaign?page=${page}&pageSize=100`,
+      );
       const chunk = campaignIds(campaignsRaw);
       if (!chunk.length) break;
       ids.push(...chunk);
@@ -211,7 +215,12 @@ export async function fetchAdsStats(
       ]) {
         try {
           const data = await perfGet<unknown>(host, access, path);
-          if (data && typeof data === "object" && "raw" in (data as { raw?: string }) && typeof (data as { raw: string }).raw === "string") {
+          if (
+            data &&
+            typeof data === "object" &&
+            "raw" in (data as { raw?: string }) &&
+            typeof (data as { raw: string }).raw === "string"
+          ) {
             collected.push(...parseCsv((data as { raw: string }).raw, opts.dateFrom));
           } else {
             collected.push(...parseRows(data, opts.dateFrom));
@@ -223,9 +232,7 @@ export async function fetchAdsStats(
       }
     }
 
-    const matched = skuSet.size
-      ? collected.filter((r) => !r.sku || skuSet.has(r.sku))
-      : collected;
+    const matched = skuSet.size ? collected.filter((r) => !r.sku || skuSet.has(r.sku)) : collected;
     const hasTraffic = matched.some((r) => r.views || r.clicks || r.orders || r.spend);
     if (!hasTraffic) {
       return {
@@ -302,7 +309,8 @@ export function allocateAds(
   const inRange = rows.filter((r) => r.day && days.includes(r.day));
   const distinct = new Set(inRange.map((r) => r.day));
   const hasTraffic = rows.some((r) => r.views || r.clicks || r.orders || r.spend);
-  const periodTotal = hasTraffic && (distinct.size <= 1 && days.length > 1 || inRange.length === 0);
+  const periodTotal =
+    hasTraffic && ((distinct.size <= 1 && days.length > 1) || inRange.length === 0);
 
   const variantCoverage = new Map<string, number>();
   for (const day of days) {

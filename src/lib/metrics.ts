@@ -62,7 +62,11 @@ export function periodOverlapMs(
   return Math.max(0, hi - lo);
 }
 
-export function coveragesForDay(periods: PeriodLike[], day: string, now = Date.now()): Map<string, number> {
+export function coveragesForDay(
+  periods: PeriodLike[],
+  day: string,
+  now = Date.now(),
+): Map<string, number> {
   const start = moscowDayStartMs(day);
   const end = start + 86400000;
   const map = new Map<string, number>();
@@ -116,7 +120,10 @@ export function splitFunnel(funnel: Funnel, weights: Map<string, number>): Map<s
   return out;
 }
 
-export function parseMetricVector(raw: unknown, names: readonly string[]): Record<string, number> | null {
+export function parseMetricVector(
+  raw: unknown,
+  names: readonly string[],
+): Record<string, number> | null {
   if (Array.isArray(raw)) {
     if (raw.length === 0) return {};
     if (raw.every((x) => typeof x === "number" || typeof x === "string")) {
@@ -128,7 +135,13 @@ export function parseMetricVector(raw: unknown, names: readonly string[]): Recor
     }
     if (raw.every((x) => x && typeof x === "object")) {
       const out: Record<string, number> = {};
-      for (const item of raw as { name?: string; metric?: string; key?: string; value?: unknown; id?: string }[]) {
+      for (const item of raw as {
+        name?: string;
+        metric?: string;
+        key?: string;
+        value?: unknown;
+        id?: string;
+      }[]) {
         const key = item.name ?? item.metric ?? item.key ?? item.id;
         if (key) out[key] = Number(item.value ?? 0) || 0;
       }

@@ -47,11 +47,21 @@ function enqueueOzon<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-export async function ozonRequest<T>(creds: ShopCreds, path: string, body: unknown, attempt = 0): Promise<T> {
+export async function ozonRequest<T>(
+  creds: ShopCreds,
+  path: string,
+  body: unknown,
+  attempt = 0,
+): Promise<T> {
   return enqueueOzon(() => ozonRequestOnce<T>(creds, path, body, attempt));
 }
 
-async function ozonRequestOnce<T>(creds: ShopCreds, path: string, body: unknown, attempt: number): Promise<T> {
+async function ozonRequestOnce<T>(
+  creds: ShopCreds,
+  path: string,
+  body: unknown,
+  attempt: number,
+): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     headers: {
@@ -64,7 +74,9 @@ async function ozonRequestOnce<T>(creds: ShopCreds, path: string, body: unknown,
   if (res.status === 429 && attempt < 4) {
     const raw = res.headers.get("retry-after");
     const sec = raw ? Number(raw) : NaN;
-    await sleep(Number.isFinite(sec) && sec > 0 ? Math.min(45000, sec * 1000) : 4000 * 2 ** attempt);
+    await sleep(
+      Number.isFinite(sec) && sec > 0 ? Math.min(45000, sec * 1000) : 4000 * 2 ** attempt,
+    );
     return ozonRequestOnce<T>(creds, path, body, attempt + 1);
   }
   const text = await res.text();
@@ -86,7 +98,12 @@ async function ozonRequestOnce<T>(creds: ShopCreds, path: string, body: unknown,
 
 function friendly(message: string, status: number): string {
   const lower = message.toLowerCase();
-  if (status === 401 || status === 403 || lower.includes("api-key") || lower.includes("client-id")) {
+  if (
+    status === 401 ||
+    status === 403 ||
+    lower.includes("api-key") ||
+    lower.includes("client-id")
+  ) {
     return "Ключи Ozon не приняты. Проверьте Client-Id и Api-Key.";
   }
   if (status === 429) return "Слишком много запросов к Ozon. Подождите минуту.";
@@ -170,20 +187,31 @@ function mapProduct(item: ProductInfoItem): ProductCard {
   };
 }
 
-function productInfoItems(data: { items?: ProductInfoItem[]; result?: { items?: ProductInfoItem[] } }) {
+function productInfoItems(data: {
+  items?: ProductInfoItem[];
+  result?: { items?: ProductInfoItem[] };
+}) {
   return data.result?.items ?? data.items ?? [];
 }
 
 export async function validateCredentials(creds: ShopCreds): Promise<void> {
-  await ozonRequest(creds, "/v3/product/list", { filter: { visibility: "ALL" }, limit: 1, last_id: "" });
+  await ozonRequest(creds, "/v3/product/list", {
+    filter: { visibility: "ALL" },
+    limit: 1,
+    last_id: "",
+  });
 }
 
-async function infoByIds(creds: ShopCreds, productIds: number[], offerIds: string[], skus: number[]) {
-  const info = await ozonRequest<{ items?: ProductInfoItem[]; result?: { items?: ProductInfoItem[] } }>(
-    creds,
-    "/v3/product/info/list",
-    { product_id: productIds, offer_id: offerIds, sku: skus },
-  );
+async function infoByIds(
+  creds: ShopCreds,
+  productIds: number[],
+  offerIds: string[],
+  skus: number[],
+) {
+  const info = await ozonRequest<{
+    items?: ProductInfoItem[];
+    result?: { items?: ProductInfoItem[] };
+  }>(creds, "/v3/product/info/list", { product_id: productIds, offer_id: offerIds, sku: skus });
   return productInfoItems(info)
     .map(mapProduct)
     .filter((p) => p.productId);
@@ -206,11 +234,9 @@ export async function listProducts(creds: ShopCreds, query?: string): Promise<Pr
   const details: ProductCard[] = [];
   let lastId = "";
   for (let page = 0; page < 4; page += 1) {
-    const data = await ozonRequest<{ result?: { items?: { product_id?: number }[]; last_id?: string } }>(
-      creds,
-      "/v3/product/list",
-      { filter: { visibility: "ALL" }, limit: 100, last_id: lastId },
-    );
+    const data = await ozonRequest<{
+      result?: { items?: { product_id?: number }[]; last_id?: string };
+    }>(creds, "/v3/product/list", { filter: { visibility: "ALL" }, limit: 100, last_id: lastId });
     const chunk = data.result?.items ?? [];
     const ids = chunk.map((i) => i.product_id).filter((id): id is number => Boolean(id));
     if (ids.length) details.push(...(await infoByIds(creds, ids, [], [])));
@@ -247,11 +273,10 @@ export async function getProductDetails(creds: ShopCreds, productId: string): Pr
   const card = items[0];
   if (!card) throw new OzonApiError("Товар не найден в кабинете Ozon", 404);
   try {
-    const desc = await ozonRequest<{ result?: { description?: string }[]; items?: { description?: string }[] }>(
-      creds,
-      "/v1/product/info/description",
-      { product_id: Number(productId) },
-    );
+    const desc = await ozonRequest<{
+      result?: { description?: string }[];
+      items?: { description?: string }[];
+    }>(creds, "/v1/product/info/description", { product_id: Number(productId) });
     const d = desc.result?.[0]?.description ?? desc.items?.[0]?.description;
     if (d) card.description = d;
   } catch {
@@ -260,7 +285,11 @@ export async function getProductDetails(creds: ShopCreds, productId: string): Pr
   return card;
 }
 
-export async function applyPictures(creds: ShopCreds, productId: string, images: string[]): Promise<void> {
+export async function applyPictures(
+  creds: ShopCreds,
+  productId: string,
+  images: string[],
+): Promise<void> {
   const urls = images.map((u) => u.trim()).filter((u) => /^https?:\/\//i.test(u));
   if (!urls.length) throw new OzonApiError("Нет публичных URL изображений", 400);
   const id = Number(productId);
@@ -270,16 +299,26 @@ export async function applyPictures(creds: ShopCreds, productId: string, images:
   });
 }
 
-export async function applyPrices(creds: ShopCreds, productId: string, price: string): Promise<void> {
+export async function applyPrices(
+  creds: ShopCreds,
+  productId: string,
+  price: string,
+): Promise<void> {
   await ozonRequest(creds, "/v1/product/import/prices", {
-    prices: [{ product_id: Number(productId), price: String(price), auto_action_enabled: "UNKNOWN" }],
+    prices: [
+      { product_id: Number(productId), price: String(price), auto_action_enabled: "UNKNOWN" },
+    ],
   });
 }
 
 const NAME_ATTR = 4180;
 const DESC_ATTR = 4191;
 
-type ProductAttribute = { id?: number; complex_id?: number; values?: { dictionary_value_id?: number; value?: string }[] };
+type ProductAttribute = {
+  id?: number;
+  complex_id?: number;
+  values?: { dictionary_value_id?: number; value?: string }[];
+};
 
 /**
  * Меняет только название и/или аннотацию.
@@ -307,11 +346,10 @@ export async function applyNameDescription(
   if (offerId) {
     const item: Record<string, unknown> = { offer_id: offerId, name: title };
     if (which.description) item.description = description;
-    const res = await ozonRequest<{ result?: { task_id?: number | string } | null; task_id?: number | string }>(
-      creds,
-      "/v3/product/import",
-      { items: [item] },
-    );
+    const res = await ozonRequest<{
+      result?: { task_id?: number | string } | null;
+      task_id?: number | string;
+    }>(creds, "/v3/product/import", { items: [item] });
     const taskId = res?.result?.task_id ?? res?.task_id;
     if (taskId === undefined || taskId === null) {
       throw new OzonApiError("Ozon не принял смену названия/описания (нет task_id)", 400);
@@ -323,10 +361,18 @@ export async function applyNameDescription(
   //    dictionary_value_id: 0 — без него Ozon отвечает 200 и ничего не меняет.
   const attributes: ProductAttribute[] = [];
   if (which.title) {
-    attributes.push({ id: NAME_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: title }] });
+    attributes.push({
+      id: NAME_ATTR,
+      complex_id: 0,
+      values: [{ dictionary_value_id: 0, value: title }],
+    });
   }
   if (which.description) {
-    attributes.push({ id: DESC_ATTR, complex_id: 0, values: [{ dictionary_value_id: 0, value: description }] });
+    attributes.push({
+      id: DESC_ATTR,
+      complex_id: 0,
+      values: [{ dictionary_value_id: 0, value: description }],
+    });
   }
   if (!attributes.length) return;
   const item: Record<string, unknown> = { attributes };
@@ -344,7 +390,11 @@ type AnalyticsPayload = {
   data?: { dimensions?: { id?: string; name?: string }[]; metrics?: unknown }[];
 };
 
-function parseAnalyticsPayload(data: AnalyticsPayload, metrics: readonly string[], fallbackDay: string): AnalyticsRow[] {
+function parseAnalyticsPayload(
+  data: AnalyticsPayload,
+  metrics: readonly string[],
+  fallbackDay: string,
+): AnalyticsRow[] {
   const rows = data.result?.data ?? data.data ?? [];
   const out: AnalyticsRow[] = [];
   for (const row of rows) {
@@ -369,7 +419,8 @@ async function analyticsQuery(
   creds: ShopCreds,
   opts: { dateFrom: string; dateTo: string; metrics: readonly string[]; skus: string[] },
 ): Promise<AnalyticsRow[]> {
-  const filters = opts.skus.length === 1 ? [{ key: "sku", operation: "EQ", value: opts.skus[0] }] : [];
+  const filters =
+    opts.skus.length === 1 ? [{ key: "sku", operation: "EQ", value: opts.skus[0] }] : [];
   const data = await ozonRequest<AnalyticsPayload>(creds, "/v1/analytics/data", {
     date_from: opts.dateFrom,
     date_to: opts.dateTo,
@@ -391,7 +442,12 @@ export async function fetchAnalytics(
 ): Promise<{ rows: AnalyticsRow[]; limited: boolean; note: string | null; rateLimited: boolean }> {
   const skuList = (opts.skus ?? []).filter(Boolean);
   if (!skuList.length) {
-    return { rows: [], limited: true, rateLimited: false, note: "Нет SKU — заказы ищем по offer_id в отгрузках." };
+    return {
+      rows: [],
+      limited: true,
+      rateLimited: false,
+      note: "Нет SKU — заказы ищем по offer_id в отгрузках.",
+    };
   }
   const byKey = new Map<string, AnalyticsRow>();
   const merge = (row: AnalyticsRow) => {
@@ -400,10 +456,17 @@ export async function fetchAnalytics(
     byKey.set(key, prev ? { ...row, ...addFunnel(prev, row), day: row.day, sku: row.sku } : row);
   };
   try {
-    (await analyticsQuery(creds, { ...opts, metrics: ORDER_METRICS, skus: skuList })).forEach(merge);
+    (await analyticsQuery(creds, { ...opts, metrics: ORDER_METRICS, skus: skuList })).forEach(
+      merge,
+    );
   } catch (err) {
     if (isRateLimit(err)) {
-      return { rows: [], limited: true, rateLimited: true, note: "Ozon ограничил частоту. Подождите минуту." };
+      return {
+        rows: [],
+        limited: true,
+        rateLimited: true,
+        note: "Ozon ограничил частоту. Подождите минуту.",
+      };
     }
     throw err;
   }
@@ -413,12 +476,20 @@ export async function fetchAnalytics(
     (await analyticsQuery(creds, { ...opts, metrics: VIEW_METRICS, skus: skuList })).forEach(merge);
   } catch (err) {
     if (isRateLimit(err)) note = "Заказы получены. Показы не успели из‑за лимита.";
-    else if (isPremium(err) || (err instanceof OzonApiError && (err.status === 400 || err.status === 403))) {
+    else if (
+      isPremium(err) ||
+      (err instanceof OzonApiError && (err.status === 400 || err.status === 403))
+    ) {
       limited = true;
       note = "Показы и корзина — Premium Plus. Заказы и выручка без подписки.";
     } else note = err instanceof Error ? err.message : "Показы недоступны";
   }
-  return { rows: [...byKey.values()].map((r) => ({ ...r, ...sanitizeFunnel(r) })), limited, rateLimited: false, note };
+  return {
+    rows: [...byKey.values()].map((r) => ({ ...r, ...sanitizeFunnel(r) })),
+    limited,
+    rateLimited: false,
+    note,
+  };
 }
 
 type PostingProduct = {
@@ -448,17 +519,27 @@ function pieceCount(value: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-async function listPostings(creds: ShopCreds, path: string, since: string, to: string): Promise<Posting[]> {
+async function listPostings(
+  creds: ShopCreds,
+  path: string,
+  since: string,
+  to: string,
+): Promise<Posting[]> {
   const all: Posting[] = [];
   for (let offset = 0; offset < 300; offset += 100) {
-    const data = await ozonRequest<{ result?: { postings?: Posting[] } | Posting[]; postings?: Posting[] }>(creds, path, {
+    const data = await ozonRequest<{
+      result?: { postings?: Posting[] } | Posting[];
+      postings?: Posting[];
+    }>(creds, path, {
       dir: "ASC",
       filter: { since, to },
       limit: 100,
       offset,
       with: { analytics_data: false, financial_data: true },
     });
-    const chunk = Array.isArray(data.result) ? data.result : data.result?.postings ?? data.postings ?? [];
+    const chunk = Array.isArray(data.result)
+      ? data.result
+      : (data.result?.postings ?? data.postings ?? []);
     all.push(...chunk);
     if (chunk.length < 100) break;
   }
@@ -497,7 +578,12 @@ export async function fetchOrderMetrics(
       const sku = prod.sku !== undefined ? String(prod.sku) : "";
       const off = prod.offer_id ?? "";
       const fin = financial[index];
-      const finSku = fin?.sku !== undefined ? String(fin.sku) : fin?.product_id !== undefined ? String(fin.product_id) : "";
+      const finSku =
+        fin?.sku !== undefined
+          ? String(fin.sku)
+          : fin?.product_id !== undefined
+            ? String(fin.product_id)
+            : "";
       const finOffer = fin?.offer_id ?? "";
       const match =
         (sku && skuSet.has(sku)) ||

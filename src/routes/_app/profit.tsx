@@ -2,7 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { listShops } from "@/lib/server/actions";
-import { getProfitDashboard, saveFinanceSettings, saveSkuCost, syncFinance } from "@/lib/server/finance-actions";
+import {
+  getProfitDashboard,
+  saveFinanceSettings,
+  saveSkuCost,
+  syncFinance,
+} from "@/lib/server/finance-actions";
 import { TAX_REGIMES } from "@/lib/profit";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -50,7 +55,11 @@ function ProfitPage() {
   const sync = useMutation({
     mutationFn: () =>
       syncFinance({
-        data: { shopId: activeShop, from: dash.data?.rangeFrom ?? today, to: dash.data?.rangeTo ?? today },
+        data: {
+          shopId: activeShop,
+          from: dash.data?.rangeFrom ?? today,
+          to: dash.data?.rangeTo ?? today,
+        },
       }),
     onSuccess: async (r) => {
       toast.success(`Собрано операций: ${r.rows}`);
@@ -114,10 +123,34 @@ function ProfitPage() {
   const csv = useMemo(() => {
     const rows = dash.data?.rows ?? [];
     if (!rows.length || !t) return "";
-    const head = ["SKU", "Товар", "Продано", "Продажи", "Возвраты", "Удержания", "Реклама", "Прибыль", "Маржа%", "ROI%", "ДРР%"];
+    const head = [
+      "SKU",
+      "Товар",
+      "Продано",
+      "Продажи",
+      "Возвраты",
+      "Удержания",
+      "Реклама",
+      "Прибыль",
+      "Маржа%",
+      "ROI%",
+      "ДРР%",
+    ];
     const line = (r: ProfitSkuRow) => {
       const holds = r.commission + r.logistics + r.returns + r.storage + r.penalties + r.otherHold;
-      return [r.sku, r.name.replaceAll(";", ","), r.units, r.revenue, r.returns, holds, r.ads, r.profit, r.margin ?? "", r.roi ?? "", r.drr ?? ""].join(";");
+      return [
+        r.sku,
+        r.name.replaceAll(";", ","),
+        r.units,
+        r.revenue,
+        r.returns,
+        holds,
+        r.ads,
+        r.profit,
+        r.margin ?? "",
+        r.roi ?? "",
+        r.drr ?? "",
+      ].join(";");
     };
     return [head.join(";"), ...rows.map(line)].join("\n");
   }, [dash.data, t]);
@@ -168,7 +201,10 @@ function ProfitPage() {
           >
             Excel / CSV
           </Button>
-          <Button onClick={() => sync.mutate()} disabled={!activeShop || sync.isPending || !dash.data}>
+          <Button
+            onClick={() => sync.mutate()}
+            disabled={!activeShop || sync.isPending || !dash.data}
+          >
             {sync.isPending ? "Сбор…" : "Собрать с Ozon"}
           </Button>
         </div>
@@ -176,7 +212,9 @@ function ProfitPage() {
 
       {settingsOpen ? (
         <Card className="grid gap-3 p-4 sm:grid-cols-4">
-          <div className="sm:col-span-4 text-sm text-muted">Налог считается с реализации (продажи − возвраты).</div>
+          <div className="sm:col-span-4 text-sm text-muted">
+            Налог считается с реализации (продажи − возвраты).
+          </div>
           <div>
             <Label>Режим</Label>
             <select
@@ -225,7 +263,9 @@ function ProfitPage() {
               onClick={() => setPeriod(p.id)}
               className={cn(
                 "overflow-hidden rounded-[var(--radius-xl)] border text-left transition",
-                active ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/50",
+                active
+                  ? "border-primary ring-2 ring-primary/40"
+                  : "border-border hover:border-primary/50",
               )}
             >
               <div className="bg-primary px-4 py-2.5 text-primary-fg">
@@ -257,7 +297,9 @@ function ProfitPage() {
                   </div>
                   <div>
                     <p className="text-xs text-muted">Прибыль</p>
-                    <p className={`tabular-nums ${signedClass(tot.profit)}`}>{formatMoney(tot.profit)}</p>
+                    <p className={`tabular-nums ${signedClass(tot.profit)}`}>
+                      {formatMoney(tot.profit)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -276,7 +318,9 @@ function ProfitPage() {
       {dash.data && dash.data.rows.length === 0 ? (
         <Card className="space-y-2 p-8">
           <p className="text-lg">Нет операций за выбранный период</p>
-          <p className="text-sm text-muted">Нажмите «Собрать с Ozon» — подтянем продажи, выплаты и рекламу за два месяца.</p>
+          <p className="text-sm text-muted">
+            Нажмите «Собрать с Ozon» — подтянем продажи, выплаты и рекламу за два месяца.
+          </p>
         </Card>
       ) : null}
 
@@ -285,7 +329,20 @@ function ProfitPage() {
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="bg-elevated text-xs uppercase tracking-wide text-subtle">
               <tr>
-                {["Товар", "Продано", "Продажи", "Возвраты", "Удержания", "Реклама", "Прибыль", "На ед.", "Маржа", "ROI", "ДРР", "Себест."].map((h) => (
+                {[
+                  "Товар",
+                  "Продано",
+                  "Продажи",
+                  "Возвраты",
+                  "Удержания",
+                  "Реклама",
+                  "Прибыль",
+                  "На ед.",
+                  "Маржа",
+                  "ROI",
+                  "ДРР",
+                  "Себест.",
+                ].map((h) => (
                   <th key={h} className="px-3 py-2.5 font-medium">
                     {h}
                   </th>
@@ -294,7 +351,8 @@ function ProfitPage() {
             </thead>
             <tbody>
               {dash.data.rows.map((r) => {
-                const holds = r.commission + r.logistics + r.returns + r.storage + r.penalties + r.otherHold;
+                const holds =
+                  r.commission + r.logistics + r.returns + r.storage + r.penalties + r.otherHold;
                 const perUnit = r.units ? r.profit / r.units : 0;
                 const editing = editSku === r.sku;
                 return (
@@ -302,7 +360,11 @@ function ProfitPage() {
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-3">
                         {r.image ? (
-                          <img src={r.image} alt="" className="h-10 w-10 shrink-0 rounded-[var(--radius-sm)] bg-elevated object-cover" />
+                          <img
+                            src={r.image}
+                            alt=""
+                            className="h-10 w-10 shrink-0 rounded-[var(--radius-sm)] bg-elevated object-cover"
+                          />
                         ) : (
                           <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-elevated text-[10px] text-subtle">
                             {r.sku ? (r.name || r.sku).charAt(0) : "—"}
@@ -319,7 +381,9 @@ function ProfitPage() {
                     <td className="px-3 py-2 tabular-nums text-muted">{formatMoney(r.returns)}</td>
                     <td className="px-3 py-2 tabular-nums text-muted">{formatMoney(holds)}</td>
                     <td className="px-3 py-2 tabular-nums">{formatMoney(r.ads)}</td>
-                    <td className={`px-3 py-2 tabular-nums ${signedClass(r.profit)}`}>{formatMoney(r.profit)}</td>
+                    <td className={`px-3 py-2 tabular-nums ${signedClass(r.profit)}`}>
+                      {formatMoney(r.profit)}
+                    </td>
                     <td className="px-3 py-2 tabular-nums">{formatMoney(perUnit)}</td>
                     <td className="px-3 py-2 tabular-nums">{formatPct(r.margin)}</td>
                     <td className="px-3 py-2 tabular-nums">{formatPct(r.roi)}</td>
@@ -327,8 +391,16 @@ function ProfitPage() {
                     <td className="px-3 py-2">
                       {editing ? (
                         <div className="flex flex-col gap-1">
-                          <Input value={cost} onChange={(e) => setCost(e.target.value)} placeholder="закупка" />
-                          <Input value={pack} onChange={(e) => setPack(e.target.value)} placeholder="упаковка" />
+                          <Input
+                            value={cost}
+                            onChange={(e) => setCost(e.target.value)}
+                            placeholder="закупка"
+                          />
+                          <Input
+                            value={pack}
+                            onChange={(e) => setPack(e.target.value)}
+                            placeholder="упаковка"
+                          />
                           <Button className="h-8" onClick={() => saveCost.mutate()}>
                             Ок
                           </Button>

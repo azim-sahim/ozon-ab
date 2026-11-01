@@ -27,7 +27,12 @@ export type CashFlowSummary = {
 };
 
 type Money = { amount?: string | number | null; currency?: string | null };
-type Fee = { accrued?: Money; type_id?: number; accrual_id?: number; amount?: Money | number | string };
+type Fee = {
+  accrued?: Money;
+  type_id?: number;
+  accrual_id?: number;
+  amount?: Money | number | string;
+};
 type AccrualType = { id?: number; name?: string; description?: string };
 
 type ProductAccrual = {
@@ -55,7 +60,9 @@ type ByDayAccrual = {
   total_amount?: Money;
   accrued?: Money;
   non_item_fee?: Fee | Fee[];
-  item_fees?: { fees?: { sku?: number | string; fees?: Fee[] }[] } | { sku?: number | string; fees?: Fee[] }[];
+  item_fees?:
+    | { fees?: { sku?: number | string; fees?: Fee[] }[] }
+    | { sku?: number | string; fees?: Fee[] }[];
   posting?: { posting_number?: string; products?: ProductAccrual[] };
   container_fees?: { fees?: Fee[] } | Fee[];
 };
@@ -100,11 +107,17 @@ function emptyLine(day: string, sku: string, name: string): FinanceLine {
   };
 }
 
-type Bucket = "sale" | "return" | "commission" | "logistics" | "storage" | "ads" | "penalties" | "other";
+type Bucket =
+  "sale" | "return" | "commission" | "logistics" | "storage" | "ads" | "penalties" | "other";
 
 function classifyName(raw: string): Bucket {
   const name = raw.toLowerCase();
-  if (name.includes("возврат") || name.includes("return") || name.includes("невыкуп") || name.includes("отмен")) {
+  if (
+    name.includes("возврат") ||
+    name.includes("return") ||
+    name.includes("невыкуп") ||
+    name.includes("отмен")
+  ) {
     return "return";
   }
   if (
@@ -117,10 +130,20 @@ function classifyName(raw: string): Bucket {
   ) {
     return "ads";
   }
-  if (name.includes("хранен") || name.includes("утилиз") || name.includes("storage") || name.includes("disposal")) {
+  if (
+    name.includes("хранен") ||
+    name.includes("утилиз") ||
+    name.includes("storage") ||
+    name.includes("disposal")
+  ) {
     return "storage";
   }
-  if (name.includes("штраф") || name.includes("fine") || name.includes("penalty") || name.includes("недовлож")) {
+  if (
+    name.includes("штраф") ||
+    name.includes("fine") ||
+    name.includes("penalty") ||
+    name.includes("недовлож")
+  ) {
     return "penalties";
   }
   if (
@@ -134,7 +157,12 @@ function classifyName(raw: string): Bucket {
   ) {
     return "logistics";
   }
-  if (name.includes("комисс") || name.includes("вознагражд") || name.includes("эквайр") || name.includes("acquiring")) {
+  if (
+    name.includes("комисс") ||
+    name.includes("вознагражд") ||
+    name.includes("эквайр") ||
+    name.includes("acquiring")
+  ) {
     return "commission";
   }
   if (
@@ -178,7 +206,11 @@ function asArray<T>(v: T | T[] | undefined | null): T[] {
 async function loadTypes(creds: ShopCreds): Promise<Map<number, string>> {
   const map = new Map<number, string>();
   try {
-    const json = await ozonRequest<{ accrual_types?: AccrualType[] }>(creds, "/v1/finance/accrual/types", {});
+    const json = await ozonRequest<{ accrual_types?: AccrualType[] }>(
+      creds,
+      "/v1/finance/accrual/types",
+      {},
+    );
     for (const t of json.accrual_types ?? []) {
       if (t.id == null) continue;
       map.set(Number(t.id), `${t.name ?? ""} ${t.description ?? ""}`.trim());
@@ -189,7 +221,11 @@ async function loadTypes(creds: ShopCreds): Promise<Map<number, string>> {
   return map;
 }
 
-export async function fetchCashFlow(creds: ShopCreds, dateFrom: string, dateTo: string): Promise<CashFlowSummary | null> {
+export async function fetchCashFlow(
+  creds: ShopCreds,
+  dateFrom: string,
+  dateTo: string,
+): Promise<CashFlowSummary | null> {
   try {
     const request = async (from: string, to: string) =>
       ozonRequest<{
@@ -268,10 +304,17 @@ export async function fetchFinanceTransactions(
     for (let page = 0; page < 80; page += 1) {
       let json: { accruals?: ByDayAccrual[]; last_id?: string | number };
       try {
-        json = await ozonRequest(creds, "/v1/finance/accrual/by-day", { date: day, last_id: lastId });
+        json = await ozonRequest(creds, "/v1/finance/accrual/by-day", {
+          date: day,
+          last_id: lastId,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message.toLowerCase() : "";
-        if (page > 0 && (msg.includes("token") || msg.includes("last_id") || msg.includes("invalid"))) break;
+        if (
+          page > 0 &&
+          (msg.includes("token") || msg.includes("last_id") || msg.includes("invalid"))
+        )
+          break;
         throw err;
       }
       const rows = json.accruals ?? [];
@@ -354,7 +397,9 @@ export async function fetchFinanceTransactions(
           const b = bucketOf(fee.type_id ?? fee.accrual_id);
           if (b !== "sale") add(line(d, primarySku), b, amt);
         }
-        const container = Array.isArray(acc.container_fees) ? acc.container_fees : (acc.container_fees?.fees ?? []);
+        const container = Array.isArray(acc.container_fees)
+          ? acc.container_fees
+          : (acc.container_fees?.fees ?? []);
         for (const fee of container) {
           const amt = feeAmount(fee);
           if (!amt) continue;
@@ -379,7 +424,14 @@ export async function fetchFinanceTransactions(
 
   for (const row of map.values()) {
     const credits = row.credits ?? 0;
-    const holds = row.commission + row.logistics + row.returns + row.storage + row.penalties + row.adsHold + row.otherHold;
+    const holds =
+      row.commission +
+      row.logistics +
+      row.returns +
+      row.storage +
+      row.penalties +
+      row.adsHold +
+      row.otherHold;
     row.payout = round2(row.revenue - holds + credits);
     row.realization = round2(row.realization || row.revenue);
     row.revenue = round2(row.revenue);

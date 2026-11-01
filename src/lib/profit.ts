@@ -1,6 +1,11 @@
 export type TaxRegime = "usn6" | "usn8" | "usn15" | "npd4" | "npd6" | "custom" | "none";
 
-export const TAX_REGIMES: { id: TaxRegime; label: string; rate: number; base: "revenue" | "profit" }[] = [
+export const TAX_REGIMES: {
+  id: TaxRegime;
+  label: string;
+  rate: number;
+  base: "revenue" | "profit";
+}[] = [
   { id: "usn6", label: "УСН «Доходы» 6% с реализации", rate: 6, base: "revenue" },
   { id: "usn8", label: "УСН «Доходы» 8% с реализации", rate: 8, base: "revenue" },
   { id: "usn15", label: "УСН «Доходы − расходы» 15%", rate: 15, base: "profit" },
@@ -102,7 +107,13 @@ export function finalizeFlow(
   tax: { regime: string; rate: number },
 ): MoneyFlow {
   const holds =
-    raw.commission + raw.logistics + raw.returns + raw.storage + raw.penalties + raw.adsHold + raw.otherHold;
+    raw.commission +
+    raw.logistics +
+    raw.returns +
+    raw.storage +
+    raw.penalties +
+    raw.adsHold +
+    raw.otherHold;
   const payout = raw.payout || raw.revenue - holds;
   const adsExtra = Math.max(0, raw.ads - raw.adsHold);
   const profitBeforeTax = payout - raw.cogs - raw.extra - adsExtra;

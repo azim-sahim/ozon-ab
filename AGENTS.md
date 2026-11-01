@@ -8,18 +8,18 @@ Deploy/env details live in `README.md` and `env.example` — don't duplicate the
 
 ## Commands
 
-| Command | Notes |
-|---|---|
-| `npm run dev` | Dev server on **`0.0.0.0:8080`** (strictPort — live-preview contract; don't change host/port) |
-| `npm test` | Two runners: `node --test 'scripts/**/*.test.mjs'` then `node --experimental-strip-types --test` on an **explicit file list** |
-| `npm run typecheck` | `tsc --noEmit` (covers `src/` + `server/`) |
-| `npm run lint` | ESLint flat config |
-| `npm run format` | Prettier (`--write`) |
-| `npm run check:auth` | Compares dev-server vs build `VITE_AUTH_ENABLED` (needs a running dev server) |
-| `npm run build` | `vite build` → `patch-ssr-exports` → `db:migrate` (deploy path) |
-| `npm run build:selfhost` | Same but `NITRO_PRESET=node-server`, **no** migrate (runs at container start) |
-| `npm run db:migrate` | Apply `migrations/*.sql` to `DATABASE_URL` |
-| `npm start` | `node .output/server/index.mjs` |
+| Command                  | Notes                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Dev server on **`0.0.0.0:8080`** (strictPort — live-preview contract; don't change host/port)                                 |
+| `npm test`               | Two runners: `node --test 'scripts/**/*.test.mjs'` then `node --experimental-strip-types --test` on an **explicit file list** |
+| `npm run typecheck`      | `tsc --noEmit` (covers `src/` + `server/`)                                                                                    |
+| `npm run lint`           | ESLint flat config                                                                                                            |
+| `npm run format`         | Prettier (`--write`)                                                                                                          |
+| `npm run check:auth`     | Compares dev-server vs build `VITE_AUTH_ENABLED` (needs a running dev server)                                                 |
+| `npm run build`          | `vite build` → `patch-ssr-exports` → `db:migrate` (deploy path)                                                               |
+| `npm run build:selfhost` | Same but `NITRO_PRESET=node-server`, **no** migrate (runs at container start)                                                 |
+| `npm run db:migrate`     | Apply `migrations/*.sql` to `DATABASE_URL`                                                                                    |
+| `npm start`              | `node .output/server/index.mjs`                                                                                               |
 
 There is no per-package runner (single package). To run one test file: `node --test scripts/migration-plan.test.mjs` or `node --experimental-strip-types --test src/lib/auth/gate-identity.test.ts`.
 

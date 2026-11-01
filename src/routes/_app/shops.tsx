@@ -59,8 +59,12 @@ function ShopsPage() {
             <div>
               <p className="font-medium">{s.name}</p>
               <p className="text-xs text-subtle">
-                {s.isDemo ? "демо" : s.clientIdHint ?? "ключи сохранены"}
-                {!s.isDemo ? (s.hasPerformance ? " · реклама подключена" : " · нет Performance API") : ""}
+                {s.isDemo ? "демо" : (s.clientIdHint ?? "ключи сохранены")}
+                {!s.isDemo
+                  ? s.hasPerformance
+                    ? " · реклама подключена"
+                    : " · нет Performance API"
+                  : ""}
               </p>
             </div>
             <div className="flex gap-1">
@@ -85,24 +89,46 @@ function ShopsPage() {
             </div>
           </Card>
         ))}
-        {(shops.data ?? []).length === 0 ? <p className="text-sm text-muted">Добавьте магазин с ключами Seller API.</p> : null}
+        {(shops.data ?? []).length === 0 ? (
+          <p className="text-sm text-muted">Добавьте магазин с ключами Seller API.</p>
+        ) : null}
       </div>
       <Card className="space-y-3">
         <h2 className="text-lg font-medium">{editId ? "Обновить ключи" : "Подключить"}</h2>
         <Label>Название</Label>
-        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Основной кабинет" />
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Основной кабинет"
+        />
         <Label>Seller Client-Id</Label>
         <Input value={clientId} onChange={(e) => setClientId(e.target.value)} autoComplete="off" />
         <Label>Seller Api-Key</Label>
-        <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} type="password" autoComplete="off" />
-        <p className="pt-2 text-xs font-medium uppercase tracking-wide text-subtle">Performance API — реклама</p>
+        <Input
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          type="password"
+          autoComplete="off"
+        />
+        <p className="pt-2 text-xs font-medium uppercase tracking-wide text-subtle">
+          Performance API — реклама
+        </p>
         <p className="text-xs text-muted">
           Кабинет Ozon → Настройки → Seller API → Performance API. Не путать с Api-Key продавца.
         </p>
         <Label>Performance Client ID</Label>
-        <Input value={perfClientId} onChange={(e) => setPerfClientId(e.target.value)} autoComplete="off" />
+        <Input
+          value={perfClientId}
+          onChange={(e) => setPerfClientId(e.target.value)}
+          autoComplete="off"
+        />
         <Label>Performance Client Secret</Label>
-        <Input value={perfClientSecret} onChange={(e) => setPerfClientSecret(e.target.value)} type="password" autoComplete="off" />
+        <Input
+          value={perfClientSecret}
+          onChange={(e) => setPerfClientSecret(e.target.value)}
+          type="password"
+          autoComplete="off"
+        />
         <p className="text-xs text-subtle">Ключи шифруются на сервере и не уходят в браузер.</p>
         <div className="flex flex-wrap gap-2">
           <Button onClick={() => save.mutate()} disabled={save.isPending}>

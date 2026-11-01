@@ -41,8 +41,21 @@ function NewTest() {
           rotation: "interval",
           intervalHours,
           variants: [
-            { label: "A", title: product.name, description: product.description, images: a, price: product.price, isControl: true },
-            { label: "B", title: titleB || product.name, description: descB || product.description, images: b, price: product.price },
+            {
+              label: "A",
+              title: product.name,
+              description: product.description,
+              images: a,
+              price: product.price,
+              isControl: true,
+            },
+            {
+              label: "B",
+              title: titleB || product.name,
+              description: descB || product.description,
+              images: b,
+              price: product.price,
+            },
           ],
         },
       });
@@ -76,8 +89,19 @@ function NewTest() {
         </select>
         <Label>Товар (offer_id, SKU или название)</Label>
         <div className="flex gap-2">
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="offer_id или название" />
-          <Button variant="secondary" disabled={!activeShop || found.isPending} onClick={() => { setShopId(activeShop); found.mutate(); }}>
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="offer_id или название"
+          />
+          <Button
+            variant="secondary"
+            disabled={!activeShop || found.isPending}
+            onClick={() => {
+              setShopId(activeShop);
+              found.mutate();
+            }}
+          >
             Найти
           </Button>
         </div>
@@ -96,10 +120,14 @@ function NewTest() {
               }}
               className="flex items-center gap-3 rounded-[var(--radius-md)] border border-border p-3 text-left hover:bg-elevated"
             >
-              {p.images[0] ? <img src={p.images[0]} alt="" className="h-12 w-12 rounded object-cover" /> : null}
+              {p.images[0] ? (
+                <img src={p.images[0]} alt="" className="h-12 w-12 rounded object-cover" />
+              ) : null}
               <span>
                 <span className="block font-medium">{p.name}</span>
-                <span className="text-xs text-subtle">{p.offerId} · SKU {p.sku ?? "—"}</span>
+                <span className="text-xs text-subtle">
+                  {p.offerId} · SKU {p.sku ?? "—"}
+                </span>
               </span>
             </button>
           ))}
@@ -111,7 +139,12 @@ function NewTest() {
           <Label>Название теста</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
           <Label>Интервал смены, часов</Label>
-          <Input type="number" min={1} value={intervalHours} onChange={(e) => setIntervalHours(Number(e.target.value) || 24)} />
+          <Input
+            type="number"
+            min={1}
+            value={intervalHours}
+            onChange={(e) => setIntervalHours(Number(e.target.value) || 24)}
+          />
           <ImageGallery label="Фото варианта A" urls={imagesA} onChange={setImagesA} />
           <Label>Название B</Label>
           <Input value={titleB} onChange={(e) => setTitleB(e.target.value)} />

@@ -11,10 +11,7 @@ export function extForMime(mime: string): string {
 }
 
 export function publicOrigin(fallback = ""): string {
-  const env =
-    process.env.APP_URL?.trim() ||
-    process.env.BETTER_AUTH_URL?.trim() ||
-    fallback;
+  const env = process.env.APP_URL?.trim() || process.env.BETTER_AUTH_URL?.trim() || fallback;
   return (env || "").replace(/\/$/, "");
 }
 
@@ -32,7 +29,8 @@ export async function saveMedia(opts: {
   const mime = opts.mime.split(";")[0].trim().toLowerCase();
   if (!ALLOWED.has(mime)) throw new Error("Нужен JPEG, PNG, WebP или GIF");
   const raw = opts.dataBase64.replace(/^data:[^;]+;base64,/, "").replace(/\s/g, "");
-  if (!raw || raw.length > MAX_B64) throw new Error("Файл слишком большой. Максимум около 4 МБ после сжатия.");
+  if (!raw || raw.length > MAX_B64)
+    throw new Error("Файл слишком большой. Максимум около 4 МБ после сжатия.");
   try {
     Buffer.from(raw, "base64");
   } catch {
@@ -46,7 +44,9 @@ export async function saveMedia(opts: {
   return { id, mime };
 }
 
-export async function readMedia(id: string): Promise<{ mime: string; filename: string; bytes: Buffer } | null> {
+export async function readMedia(
+  id: string,
+): Promise<{ mime: string; filename: string; bytes: Buffer } | null> {
   const clean = id.replace(/\.(jpe?g|png|webp|gif)$/i, "").trim();
   if (!/^[0-9a-f-]{36}$/i.test(clean)) return null;
   const sql = await getSql();

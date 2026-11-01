@@ -25,7 +25,10 @@ function AppShell() {
         <div className="space-y-3">
           <h1 className="text-2xl font-medium text-fg">Ozon A/B</h1>
           <p className="text-sm text-muted">Войдите, чтобы подключить кабинет Ozon.</p>
-          <a href="/login" className="inline-block rounded-[var(--radius-sm)] bg-primary px-4 py-2 text-sm font-medium text-primary-fg">
+          <a
+            href="/login"
+            className="inline-block rounded-[var(--radius-sm)] bg-primary px-4 py-2 text-sm font-medium text-primary-fg"
+          >
             Перейти ко входу
           </a>
         </div>
@@ -50,7 +53,10 @@ function AppShell() {
               <Link
                 key={n.to}
                 to={n.to}
-                className={cn("text-muted hover:text-fg", (n.to === "/" ? path === "/" : path.startsWith(n.to)) && "text-fg")}
+                className={cn(
+                  "text-muted hover:text-fg",
+                  (n.to === "/" ? path === "/" : path.startsWith(n.to)) && "text-fg",
+                )}
               >
                 {n.label}
               </Link>

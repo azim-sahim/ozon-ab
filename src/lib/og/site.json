@@ -1,1 +1,6 @@
-{"title":"Ozon A/B","card":"custom","banner":"/x-banner.jpg","description":"A/B-тесты карточек на Ozon"}
+{
+  "title": "Ozon A/B",
+  "card": "custom",
+  "banner": "/x-banner.jpg",
+  "description": "A/B-тесты карточек на Ozon"
+}
